@@ -1,4 +1,4 @@
-require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
+require 'safe_shell'
 
 describe "SafeShell" do
 
@@ -18,22 +18,8 @@ describe "SafeShell" do
     $?.exitstatus.should == 1
   end
 
-  context "background" do
-    before do
-      File.delete("tmp/;date") if File.exists?("tmp/;date")
-    end
-
-    it "should safely handle dangerous characters in command arguments" do
-      SafeShell.background("touch", "tmp/;date")
-      sleep 0.1
-      File.exists?("tmp/;date").should be_true
-    end
-
-    it "should return immediately and leave the command running in the background" do
-      start_time = Time.now
-      SafeShell.background("sleep", "2")
-      (Time.now - start_time).should < 1
-    end
+  it "should handle a Pathname object passed as an argument" do
+    expect { SafeShell.execute("ls", Pathname.new("/tmp")) }.should_not raise_error
   end
 
   context "output redirection" do
@@ -51,6 +37,24 @@ describe "SafeShell" do
       SafeShell.execute("cat", "tmp/nonexistent-file", :stderr => "tmp/output.txt")
       File.exists?("tmp/output.txt").should be_true
       File.read("tmp/output.txt").should == "cat: tmp/nonexistent-file: No such file or directory\n"
+    end
+  end
+
+  context "background" do
+    before do
+      File.delete("tmp/;date") if File.exists?("tmp/;date")
+    end
+
+    it "should safely handle dangerous characters in command arguments" do
+      SafeShell.background("touch", "tmp/;date")
+      sleep 0.1
+      File.exists?("tmp/;date").should be_true
+    end
+
+    it "should return immediately and leave the command running in the background" do
+      start_time = Time.now
+      SafeShell.background("sleep", "2")
+      (Time.now - start_time).should < 1
     end
   end
 
