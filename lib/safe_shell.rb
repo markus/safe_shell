@@ -23,8 +23,9 @@ module SafeShell
   end
 
   def self.background(command, *args)
-    fork do
-      exec(command, *args)
-    end
+    Process.detach(spawn(command, *args))
+  rescue NoMethodError # ruby 1.8 does not have spawn
+    fork { exec(command, *args) }
   end
+
 end
